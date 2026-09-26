@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Add Task{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Add New Task</h2>
+  <form method="POST" action="{{ url_for('add') }}">
+    <label>Student Name</label>
+    <input type="text" name="student_name" required>
+
+    <label>Task Title</label>
+    <input type="text" name="title" required>
+
+    <label>Description</label>
+    <textarea name="description" rows="3"></textarea>
+
+    <label>Due Date</label>
+    <input type="date" name="due_date">
+
+    <label>Status</label>
+    <select name="status">
+      <option value="Pending">Pending</option>
+      <option value="In Progress">In Progress</option>
+      <option value="Completed">Completed</option>
+    </select>
+
+    <button type="submit" class="btn">Save Task</button>
+  </form>
+</div>
+{% endblock %}

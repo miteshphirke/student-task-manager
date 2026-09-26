@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}All Tasks{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>All Tasks</h2>
+  {% if tasks|length == 0 %}
+    <p class="empty">No tasks yet. Click "+ New Task" to add one.</p>
+  {% else %}
+  <table>
+    <thead>
+      <tr>
+        <th>Student</th>
+        <th>Title</th>
+        <th>Due Date</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for task in tasks %}
+      <tr>
+        <td>{{ task['student_name'] }}</td>
+        <td>{{ task['title'] }}</td>
+        <td>{{ task['due_date'] or '-' }}</td>
+        <td><span class="status status-{{ task['status'] | replace(' ', '-') }}">{{ task['status'] }}</span></td>
+        <td class="actions">
+          <a href="{{ url_for('edit', task_id=task['id']) }}">Edit</a>
+          <form method="POST" action="{{ url_for('delete', task_id=task['id']) }}" style="display:inline;">
+            <button type="submit" class="delete" onclick="return confirm('Delete this task?');">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+{% endblock %}

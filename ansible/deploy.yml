@@ -1,0 +1,102 @@
+# ---------------------------------------------------------------------------
+# deploy.yml — Ansible playbook that configures an Ubuntu VM and deploys the
+# Student Task Manager stack (Flask app + Prometheus + Grafana) via Docker Compose.
+#
+# Run manually:
+#   ansible-playbook -i inventory.ini deploy.yml
+#
+# Run from Jenkins: this is called automatically in the "Deploy with Ansible" stage.
+# ---------------------------------------------------------------------------
+- name: Deploy Student Task Manager to Ubuntu VM
+  hosts: app_servers
+  become: true
+  vars:
+    app_dir: /opt/student-task-manager
+    image_tag: "latest"
+
+  tasks:
+
+    - name: Update apt package cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install prerequisite packages
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+          - python3-pip
+        state: present
+
+    - name: Add Docker's official GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker apt repository
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+
+    - name: Install Docker Engine and Compose plugin
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+        state: present
+        update_cache: yes
+
+    - name: Ensure Docker service is running and enabled
+      service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Add deploy user to the docker group
+      user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: true
+
+    - name: Create application directory on the VM
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Copy application source to the VM
+      synchronize:
+        src: "../"
+        dest: "{{ app_dir }}/"
+        rsync_opts:
+          - "--exclude=.git"
+          - "--exclude=venv"
+          - "--exclude=__pycache__"
+          - "--exclude=app/tasks.db"
+      # Fallback for environments without rsync: use 'copy' module instead of 'synchronize'
+      # if rsync is not installed on the control node or the target VM.
+
+    - name: Build and start the full stack with Docker Compose
+      community.docker.docker_compose_v2:
+        project_src: "{{ app_dir }}"
+        build: always
+        state: present
+
+    - name: Wait for the application's health endpoint to respond
+      uri:
+        url: "http://localhost:5000/health"
+        status_code: 200
+      register: health_result
+      retries: 10
+      delay: 5
+      until: health_result.status == 200
+
+    - name: Show final deployment status
+      debug:
+        msg: "Deployment complete. App: http://{{ inventory_hostname }}:5000  Prometheus: :9090  Grafana: :3000"

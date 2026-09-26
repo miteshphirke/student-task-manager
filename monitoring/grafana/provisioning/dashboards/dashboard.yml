@@ -1,0 +1,12 @@
+# Tells Grafana to auto-load any dashboard JSON files placed in this folder.
+apiVersion: 1
+
+providers:
+  - name: "Student Task Manager Dashboards"
+    orgId: 1
+    folder: ""
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    options:
+      path: /etc/grafana/provisioning/dashboards

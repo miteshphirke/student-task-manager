@@ -1,0 +1,7 @@
+__pycache__
+*.pyc
+.pytest_cache
+app/tasks.db
+.git
+.gitignore
+*.md
