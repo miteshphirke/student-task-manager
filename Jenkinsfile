@@ -91,11 +91,12 @@ pipeline {
             }
         }
 
-        stage('Deploy with Ansible') {
+                stage('Deploy with Ansible') {
             steps {
                 echo "Deploying application to the Ubuntu VM using Ansible..."
                 sh '''
-                    ansible-playbook -i ansible/inventory.ini ansible/deploy.yml \
+                    cd ansible
+                    ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory.ini deploy.yml \
                         --extra-vars "image_tag=${IMAGE_TAG}"
                 '''
             }
